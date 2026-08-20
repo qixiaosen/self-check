@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学堂空间主理人自检（demo）</title>
+<style>
+  :root{
+    --paper: #EDE8DF; --paper-raised: #F8F5EF; --ink: #26281F; --ink-soft: #5B5D50; --ink-faint: #8B8C7E;
+    --accent: #3D4A5C; --accent-ink: #2C3644; --accent-soft: #DEE3E6;
+    --line: #D9D2C2; --line-soft: #E6E1D3;
+    --good: #52713F; --good-bg: #E2EAD8; --good-line: #B9CBA6;
+    --warn: #93641F; --warn-bg: #F2E5C9; --warn-line: #DCC385;
+    --crit: #A0402F; --crit-bg: #F2DCD3; --crit-line: #DFAF9C;
+    --radius: 3px;
+    --font-display: "Songti SC","Noto Serif SC","STSong",serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper: #1A1C17; --paper-raised: #232520; --ink: #EAE6DA; --ink-soft: #ADA997; --ink-faint: #706C5C;
+      --accent: #90A4B8; --accent-ink: #C3D2DF; --accent-soft: #2A323A;
+      --line: #38392F; --line-soft: #2D2E26;
+      --good: #93B37E; --good-bg: #2A3323; --good-line: #435635;
+      --warn: #D8AD5F; --warn-bg: #362C18; --warn-line: #5A4826;
+      --crit: #DB8E7B; --crit-bg: #392620; --crit-line: #5C3B31;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #1A1C17; --paper-raised: #232520; --ink: #EAE6DA; --ink-soft: #ADA997; --ink-faint: #706C5C;
+    --accent: #90A4B8; --accent-ink: #C3D2DF; --accent-soft: #2A323A;
+    --line: #38392F; --line-soft: #2D2E26;
+    --good: #93B37E; --good-bg: #2A3323; --good-line: #435635;
+    --warn: #D8AD5F; --warn-bg: #362C18; --warn-line: #5A4826;
+    --crit: #DB8E7B; --crit-bg: #392620; --crit-line: #5C3B31;
+  }
+  :root[data-theme="light"]{
+    --paper: #EDE8DF; --paper-raised: #F8F5EF; --ink: #26281F; --ink-soft: #5B5D50; --ink-faint: #8B8C7E;
+    --accent: #3D4A5C; --accent-ink: #2C3644; --accent-soft: #DEE3E6;
+    --line: #D9D2C2; --line-soft: #E6E1D3;
+    --good: #52713F; --good-bg: #E2EAD8; --good-line: #B9CBA6;
+    --warn: #93641F; --warn-bg: #F2E5C9; --warn-line: #DCC385;
+    --crit: #A0402F; --crit-bg: #F2DCD3; --crit-line: #DFAF9C;
+  }
+  * { box-sizing: border-box; }
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.65; }
+  .wrap{ max-width: 1180px; margin: 0 auto; padding: 28px 20px 80px; display:grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: start; }
+  @media (max-width: 880px){ .wrap{ grid-template-columns: 1fr; } }
+  header.page{ grid-column: 1 / -1; margin-bottom: 4px; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 3.4vw, 30px); letter-spacing: .02em; margin: 0 0 6px; color: var(--ink); }
+  .lede{ color: var(--ink-soft); font-size: 14.5px; max-width: 62ch; margin: 0 0 2px; }
+  main{ min-width: 0; }
+  section.cat{ background: var(--paper-raised); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 18px; scroll-margin-top: 18px; }
+  .cat-head{ display:flex; align-items:baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .cat-title{ font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+  .cat-sub{ color: var(--ink-faint); font-size: 12.5px; }
+  .q{ padding: 14px 0; border-top: 1px solid var(--line-soft); }
+  .q:first-of-type{ border-top: none; padding-top: 10px; }
+  .q-label{ font-size: 14.5px; font-weight: 600; margin-bottom: 8px; }
+  .q-num{ color: var(--ink-faint); font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+  .q-help{ font-size: 12.5px; color: var(--ink-faint); margin-top: 6px; }
+  .opts{ display:flex; flex-wrap: wrap; gap: 8px; }
+  label.opt{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); padding: 7px 13px; border-radius: 999px; font-size: 13.5px; user-select:none; transition: all .15s ease; }
+  label.opt:hover{ border-color: var(--accent); }
+  label.opt input{ position:absolute; opacity:0; pointer-events:none; }
+  label.opt.checked{ background: var(--accent-soft); border-color: var(--accent); color: var(--ink); font-weight:600; }
+  input[type="text"], textarea{ width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius); background:var(--paper); color:var(--ink); font-family:inherit; font-size:14.5px; }
+  textarea{ min-height:70px; resize:vertical; }
+  .pct-badge{ font-variant-numeric: tabular-nums; font-weight:700; font-size: 13px; padding: 3px 9px; border-radius: 999px; background: var(--line-soft); color: var(--ink-soft); }
+  aside{ position: sticky; top: 20px; align-self: start; display:flex; flex-direction:column; gap: 14px; }
+  @media (max-width: 880px){ aside{ position: static; order:-1; } }
+  .panel{ background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+  .panel h2{ font-family: var(--font-display); font-size: 14.5px; margin: 0 0 12px; }
+  .progress-track{ height: 6px; border-radius: 999px; background: var(--line-soft); overflow:hidden; margin-bottom: 10px; }
+  .progress-fill{ height:100%; background: var(--accent); width:0%; transition: width .2s ease; }
+  .progress-label{ font-size: 12px; color: var(--ink-faint); margin-bottom: 12px; }
+  button.primary{ width:100%; background: var(--accent); color: var(--paper-raised); border:none; padding: 11px 14px; border-radius: var(--radius); font-size: 14px; font-weight:600; cursor:pointer; font-family: inherit; }
+  button.primary:hover{ background: var(--accent-ink); }
+  button.ghost{ width:100%; background: transparent; color: var(--ink-soft); border: 1px solid var(--line); padding: 9px 14px; border-radius: var(--radius); font-size: 13px; cursor:pointer; font-family: inherit; margin-top: 8px; }
+  button.ghost:hover{ border-color: var(--accent); color: var(--ink); }
+  .prompt-box{ grid-column: 1 / -1; }
+  textarea#promptOut, textarea#vPromptOut, textarea#cPromptOut{ min-height: 220px; white-space: pre-wrap; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+  .copy-row{ display:flex; align-items:center; gap:10px; margin-top:10px; }
+  .copy-row button{ width:auto; padding: 9px 18px; }
+  .copy-hint{ font-size: 12.5px; color: var(--ink-faint); }
+  .toast{ font-size:12.5px; color: var(--good); opacity:0; transition:opacity .2s ease; }
+  .toast.show{ opacity:1; }
+  footer.note{ grid-column: 1 / -1; text-align:center; color: var(--ink-faint); font-size: 12px; margin-top: 6px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .mode-toggle{ grid-column: 1 / -1; display:flex; gap: 10px; margin: 4px 0 18px; }
+  .mode-toggle label{ flex:1; display:flex; align-items:center; justify-content:center; gap:8px; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; cursor:pointer; font-size: 14px; font-weight:600; color: var(--ink-soft); background: var(--paper-raised); }
+  .mode-toggle input{ position:absolute; opacity:0; pointer-events:none; }
+  .mode-toggle label.checked{ background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="page">
+    <h1>学堂空间主理人自检（demo）</h1>
+    <p class="lede">聚焦拓展成长期以后、稳定班级数3个及以上的学堂阶段，帮助空间主理人对照标准检测当前真实运营状况。</p>
+  </header>
+
+  <div class="mode-toggle">
+    <label class="opt-mode checked" id="modeHostLabel"><input type="radio" name="fillMode" value="host" checked>我是空间主理人</label>
+    <label class="opt-mode" id="modeVolLabel"><input type="radio" name="fillMode" value="volunteer">我是空间主理项目义工</label>
+    <label class="opt-mode" id="modeConLabel"><input type="radio" name="fillMode" value="convener">我是知事长</label>
+  </div>
+
+  <div id="hostView">
+  <div class="panel" style="margin-bottom:18px; grid-column:1/-1;">
+    <div class="q" style="padding:0; border-top:none;">
+      <div class="q-label">学堂名称 <span style="color:var(--crit);">*必填</span></div>
+      <input type="text" placeholder="例如：望月学堂" data-q="orgName" data-kind="text" style="margin-bottom:10px;">
+      <div class="q-label">现有留存班级数</div>
+      <div class="opts" data-q="classCount" data-kind="radio" style="margin-bottom:10px;">
+        <label class="opt"><input type="radio" name="classCount" value="3"><span>3个</span></label>
+        <label class="opt"><input type="radio" name="classCount" value="4"><span>4个</span></label>
+        <label class="opt"><input type="radio" name="classCount" value="5"><span>5个</span></label>
+        <label class="opt"><input type="radio" name="classCount" value="6+"><span>6个及以上</span></label>
+      </div>
+      <div class="q-label">填表人姓名（选填）</div>
+      <input type="text" placeholder="" data-q="filledBy" data-kind="text">
+    </div>
+  </div>
+  <main id="hostForm">
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">一、团队</span><span class="cat-sub">5题</span></div>
+
+      <div class="q"><div class="q-label"><span class="q-num">1</span>学堂里哪些岗位目前没有专人做，你是否清楚？是否主动想办法共同补位？</div>
+        <div class="opts" data-q="q1a" data-kind="radio"><label class="opt"><input type="radio" name="q1a" value="yes"><span>知道哪里缺位</span></label><label class="opt"><input type="radio" name="q1a" value="no"><span>不清楚</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q1b" data-kind="radio"><label class="opt"><input type="radio" name="q1b" value="yes"><span>主动想办法补位</span></label><label class="opt"><input type="radio" name="q1b" value="no"><span>没有</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">2</span>现在有几个班参与到空间护持/日常维护当中来（大扫除、恢复本来空、认领空间、出对接人等形式均算）？</div>
+        <div class="opts" data-q="q2_count" data-kind="radio">
+          <label class="opt"><input type="radio" name="q2_count" value="0"><span>0个</span></label>
+          <label class="opt"><input type="radio" name="q2_count" value="1"><span>1个</span></label>
+          <label class="opt"><input type="radio" name="q2_count" value="2"><span>2个</span></label>
+          <label class="opt"><input type="radio" name="q2_count" value="3"><span>3个</span></label>
+          <label class="opt"><input type="radio" name="q2_count" value="4+"><span>4个及以上</span></label>
+        </div>
+        <div class="q-help" style="margin:8px 0 4px;">参与形式（可多选）：</div>
+        <div class="opts" data-q="q2_forms" data-kind="checkbox">
+          <label class="opt"><input type="checkbox" name="q2_forms" value="clean"><span>班级共同大扫除</span></label>
+          <label class="opt"><input type="checkbox" name="q2_forms" value="restore"><span>班级共同恢复本来空</span></label>
+          <label class="opt"><input type="checkbox" name="q2_forms" value="claim"><span>班级认领某个空间</span></label>
+          <label class="opt"><input type="checkbox" name="q2_forms" value="contact"><span>班级出一位对接人</span></label>
+          <label class="opt"><input type="checkbox" name="q2_forms" value="other" id="q2OtherCheck"><span>其他</span></label>
+        </div>
+        <input type="text" id="q2OtherText" data-q="q2_other" data-kind="text" placeholder="请说明其他护持方式" style="display:none; margin-top:8px;">
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">3</span>是否有定期核心团队例会？是否包含学习师父开示？</div>
+        <div class="opts" data-q="q3_meeting" data-kind="radio"><label class="opt"><input type="radio" name="q3_meeting" value="yes"><span>有例会</span></label><label class="opt"><input type="radio" name="q3_meeting" value="no"><span>无例会</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q3_study" data-kind="radio"><label class="opt"><input type="radio" name="q3_study" value="yes"><span>含学习开示</span></label><label class="opt"><input type="radio" name="q3_study" value="no"><span>没有</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q3_agenda" data-kind="radio"><label class="opt"><input type="radio" name="q3_agenda" value="yes"><span>固定议程含补位安排</span></label><label class="opt"><input type="radio" name="q3_agenda" value="no"><span>没有这条</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">4</span>学堂里的重要信息，你是主动被同步到，还是经常要自己打听、甚至事后才知道？</div>
+        <div class="opts" data-q="q4" data-kind="radio">
+          <label class="opt"><input type="radio" name="q4" value="active"><span>主动被同步</span></label>
+          <label class="opt"><input type="radio" name="q4" value="ask"><span>需要自己打听</span></label>
+          <label class="opt"><input type="radio" name="q4" value="late"><span>经常事后才知道</span></label>
+        </div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">5</span>是否有一份记录团队成员情况的名单/台账（谁、什么岗位、传帮带到哪个阶段——包括只是临时性支持、不常驻的人）？</div>
+        <div class="opts" data-q="q5" data-kind="radio">
+          <label class="opt"><input type="radio" name="q5" value="doc"><span>有，写成文字/表格</span></label>
+          <label class="opt"><input type="radio" name="q5" value="mind"><span>只在自己脑子里</span></label>
+          <label class="opt"><input type="radio" name="q5" value="none"><span>没有这个概念</span></label>
+          <label class="opt"><input type="radio" name="q5" value="solo"><span>目前只有我一个人在做</span></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">二、空间装置和运维</span><span class="cat-sub">7题</span></div>
+
+      <div class="q"><div class="q-label"><span class="q-num">6</span>物资是否分类清晰？有没有清晰的物资清单？</div>
+        <div class="opts" data-q="q6_cat" data-kind="radio"><label class="opt"><input type="radio" name="q6_cat" value="yes"><span>分类清晰</span></label><label class="opt"><input type="radio" name="q6_cat" value="no"><span>分类不清晰</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q6_list" data-kind="radio"><label class="opt"><input type="radio" name="q6_list" value="yes"><span>清单清晰</span></label><label class="opt"><input type="radio" name="q6_list" value="no"><span>没有清晰清单</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">7</span>班级/团队能否共同恢复空间本来的状态？是否已形成轮值机制支撑？维护完是否发群共同了知？</div>
+        <div class="opts" data-q="q7_restore" data-kind="radio"><label class="opt"><input type="radio" name="q7_restore" value="yes"><span>能恢复原状</span></label><label class="opt"><input type="radio" name="q7_restore" value="no"><span>恢复不到位</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q7_rotation" data-kind="radio"><label class="opt"><input type="radio" name="q7_rotation" value="yes"><span>有轮值机制</span></label><label class="opt"><input type="radio" name="q7_rotation" value="no"><span>没有</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q7_group" data-kind="radio"><label class="opt"><input type="radio" name="q7_group" value="yes"><span>发群共同了知</span></label><label class="opt"><input type="radio" name="q7_group" value="no"><span>没有发群</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">8</span>是否已经有超出手册基础要求的本地化优化？</div>
+        <div class="opts" data-q="q8" data-kind="radio"><label class="opt"><input type="radio" name="q8" value="yes"><span>已经有本地化优化</span></label><label class="opt"><input type="radio" name="q8" value="no"><span>还没有，仍以手册为准</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">9</span>是否有一份具体的空间装置/日常维护标准文件？</div>
+        <div class="opts" data-q="q9" data-kind="radio"><label class="opt"><input type="radio" name="q9" value="yes"><span>已有文件</span></label><label class="opt"><input type="radio" name="q9" value="partial"><span>只是口头共识</span></label><label class="opt"><input type="radio" name="q9" value="no"><span>没有</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">10</span>目前真正能独立完成日常空间维护工作、且已在参与的人有几位？</div>
+        <div class="opts" data-q="q10" data-kind="radio"><label class="opt"><input type="radio" name="q10" value="1"><span>只有主理人1人</span></label><label class="opt"><input type="radio" name="q10" value="2-3"><span>2-3人</span></label><label class="opt"><input type="radio" name="q10" value="4+"><span>4人以上</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">11</span>日常真正被反复使用、维护良好的核心区域，大概占总场地面积多大比例？</div>
+        <div class="opts" data-q="q11" data-kind="radio"><label class="opt"><input type="radio" name="q11" value="gt75"><span>75%以上</span></label><label class="opt"><input type="radio" name="q11" value="50to75"><span>50-75%</span></label><label class="opt"><input type="radio" name="q11" value="25to50"><span>25-50%</span></label><label class="opt"><input type="radio" name="q11" value="lt25"><span>25%以下</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">12</span>团队在日常维护中，对"正念义工行"做到哪一层？</div>
+        <div class="opts" data-q="q12" data-kind="radio"><label class="opt"><input type="radio" name="q12" value="yes"><span>已经落地，比如有人专门做传帮带/引导</span></label><label class="opt"><input type="radio" name="q12" value="mid"><span>停留在意识层面，还没具体落实</span></label><label class="opt"><input type="radio" name="q12" value="no"><span>还没有开展，没有这个概念</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">三、内容运营</span><span class="cat-sub">3题</span></div>
+
+      <div class="q"><div class="q-label"><span class="q-num">13</span>不同空间各自的功能、使用排期，是否有让核心团队之外的人也能看到、了解的公开途径？多久更新一次？</div>
+        <div class="q-help" style="margin-bottom:6px;">公开途径（可多选）：</div>
+        <div class="opts" data-q="q13_ways" data-kind="checkbox">
+          <label class="opt"><input type="checkbox" name="q13_ways" value="display"><span>固定展示</span></label>
+          <label class="opt"><input type="checkbox" name="q13_ways" value="booking"><span>预约系统/表单</span></label>
+          <label class="opt"><input type="checkbox" name="q13_ways" value="notice"><span>定期宣导/通知</span></label>
+          <label class="opt"><input type="checkbox" name="q13_ways" value="none"><span>没有公开途径</span></label>
+        </div>
+        <div class="opts" style="margin-top:8px;" data-q="q13_freq" data-kind="radio"><label class="opt"><input type="radio" name="q13_freq" value="month"><span>按月更新</span></label><label class="opt"><input type="radio" name="q13_freq" value="irregular"><span>不定期更新</span></label><label class="opt"><input type="radio" name="q13_freq" value="none"><span>没有更新机制</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">14</span>空间主理是否主动了解各类活动的安排和场地预约？活动后是否善巧引导、发动大家一起恢复本来空？</div>
+        <div class="opts" data-q="q14_know" data-kind="radio"><label class="opt"><input type="radio" name="q14_know" value="yes"><span>主动了解安排</span></label><label class="opt"><input type="radio" name="q14_know" value="no"><span>被动等告知</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q14_prep" data-kind="radio"><label class="opt"><input type="radio" name="q14_prep" value="yes"><span>活动前准备到位</span></label><label class="opt"><input type="radio" name="q14_prep" value="no"><span>没准备好</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q14_restore" data-kind="radio"><label class="opt"><input type="radio" name="q14_restore" value="yes"><span>善巧引导恢复本来空</span></label><label class="opt"><input type="radio" name="q14_restore" value="no"><span>没有发动大家</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">15</span>活动结束后，收集反馈、据此优化的方式做到哪一层？</div>
+        <div class="opts" data-q="q15" data-kind="radio">
+          <label class="opt"><input type="radio" name="q15" value="verbal"><span>口头随机地问</span></label>
+          <label class="opt"><input type="radio" name="q15" value="data"><span>有定期收集数据的习惯</span></label>
+          <label class="opt"><input type="radio" name="q15" value="track"><span>有明确展示和跟踪</span></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">四、区域赋能支持</span><span class="cat-sub">3题</span></div>
+
+      <div class="q"><div class="q-label"><span class="q-num">16</span>对外、对内分别有没有输出过学堂运营经验？</div>
+        <div class="q-help" style="margin-bottom:6px;">对外输出（可多选）：</div>
+        <div class="opts" data-q="q16_out" data-kind="checkbox">
+          <label class="opt"><input type="checkbox" name="q16_out" value="forum"><span>参加论坛/圆桌分享经验</span></label>
+          <label class="opt"><input type="checkbox" name="q16_out" value="case"><span>提交案例材料给联合会</span></label>
+          <label class="opt"><input type="checkbox" name="q16_out" value="none"><span>没有</span></label>
+        </div>
+        <div class="q-help" style="margin:10px 0 6px;">对内输出（可多选）：</div>
+        <div class="opts" data-q="q16_in" data-kind="checkbox">
+          <label class="opt"><input type="checkbox" name="q16_in" value="training"><span>做过培训（面向多人讲解）</span></label>
+          <label class="opt"><input type="checkbox" name="q16_in" value="mentor"><span>做过传帮带（一对一带人）</span></label>
+          <label class="opt"><input type="checkbox" name="q16_in" value="none"><span>没有</span></label>
+        </div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">17</span>有没有参加过项目的论坛、提升营等学习机会？对自己下一步的成长有没有具体规划？有没有主动寻找过传帮带机制？</div>
+        <div class="opts" data-q="q17_forum" data-kind="radio"><label class="opt"><input type="radio" name="q17_forum" value="yes"><span>参加过</span></label><label class="opt"><input type="radio" name="q17_forum" value="no"><span>没参加过</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q17_plan" data-kind="radio"><label class="opt"><input type="radio" name="q17_plan" value="clear"><span>有明确规划</span></label><label class="opt"><input type="radio" name="q17_plan" value="vague"><span>有一些想法</span></label><label class="opt"><input type="radio" name="q17_plan" value="none"><span>还没想过</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q17_seek" data-kind="radio"><label class="opt"><input type="radio" name="q17_seek" value="yes"><span>主动找过传帮带</span></label><label class="opt"><input type="radio" name="q17_seek" value="no"><span>没有</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">18</span>是否已经和区域联合会项目经理形成一个机制——遇到问题时可以提出申请、寻求支持？</div>
+        <div class="opts" data-q="q18" data-kind="radio"><label class="opt"><input type="radio" name="q18" value="formal"><span>已建立机制，可以提申请寻求支持</span></label><label class="opt"><input type="radio" name="q18" value="loose"><span>有联系，但没有正式求助机制</span></label><label class="opt"><input type="radio" name="q18" value="none"><span>没有建立对接，靠自己解决</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">五、客户体验</span><span class="cat-sub">3题</span></div>
+
+      <div class="q"><div class="q-label"><span class="q-num">19</span>目前接待是否已发展出多种适配模式？团队能否按情况切换？</div>
+        <div class="q-help" style="margin-bottom:6px;">模式（可多选）：</div>
+        <div class="opts" data-q="q19_modes" data-kind="checkbox">
+          <label class="opt"><input type="checkbox" name="q19_modes" value="fixed"><span>固定专岗接待</span></label>
+          <label class="opt"><input type="checkbox" name="q19_modes" value="self"><span>学员自助接待</span></label>
+          <label class="opt"><input type="checkbox" name="q19_modes" value="special"><span>特殊人员接待</span></label>
+          <label class="opt"><input type="checkbox" name="q19_modes" value="whoever"><span>谁有空谁接</span></label>
+        </div>
+        <div class="opts" style="margin-top:8px;" data-q="q19_switch" data-kind="radio"><label class="opt"><input type="radio" name="q19_switch" value="yes"><span>能按情况切换</span></label><label class="opt"><input type="radio" name="q19_switch" value="no"><span>不太能</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">20</span>无论是访客、书友还是义工，只要有人来，是否都有清晰的记录流程？是否已开始关注这些人愿不愿意再来？</div>
+        <div class="opts" data-q="q20_record" data-kind="radio"><label class="opt"><input type="radio" name="q20_record" value="yes"><span>记录流程清晰</span></label><label class="opt"><input type="radio" name="q20_record" value="no"><span>不清晰/没有</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q20_focus" data-kind="radio"><label class="opt"><input type="radio" name="q20_focus" value="all"><span>已覆盖全部人群</span></label><label class="opt"><input type="radio" name="q20_focus" value="partial"><span>只关注部分人群</span></label><label class="opt"><input type="radio" name="q20_focus" value="none"><span>还没开始</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">21</span>是否已针对不同接待场景分别形成标准流程和话术？接待岗是否接受过培训/传帮带？</div>
+        <div class="opts" data-q="q21_sop" data-kind="radio"><label class="opt"><input type="radio" name="q21_sop" value="full"><span>全部覆盖</span></label><label class="opt"><input type="radio" name="q21_sop" value="partial"><span>部分覆盖</span></label><label class="opt"><input type="radio" name="q21_sop" value="generic"><span>仍是一套通用流程</span></label><label class="opt"><input type="radio" name="q21_sop" value="none"><span>没有标准流程</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q21_train" data-kind="radio"><label class="opt"><input type="radio" name="q21_train" value="yes"><span>接受过培训</span></label><label class="opt"><input type="radio" name="q21_train" value="no"><span>没有</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">六、品牌</span><span class="cat-sub">2题</span></div>
+
+      <div class="q"><div class="q-label"><span class="q-num">22</span>是否已经把"学堂缘起"介绍话术做成可视化或可阅读的呈现，而不是只靠个人口头介绍？</div>
+        <div class="opts" data-q="q22" data-kind="radio"><label class="opt"><input type="radio" name="q22" value="yes"><span>是</span></label><label class="opt"><input type="radio" name="q22" value="no"><span>还没有</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">23</span>是否清楚品牌内涵具体体现在哪些接待细节？是否已对团队成员做过相关培训/传帮带？</div>
+        <div class="opts" data-q="q23_clear" data-kind="radio"><label class="opt"><input type="radio" name="q23_clear" value="yes"><span>清楚</span></label><label class="opt"><input type="radio" name="q23_clear" value="no"><span>不清楚</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="q23_train" data-kind="radio"><label class="opt"><input type="radio" name="q23_train" value="most"><span>已覆盖团队大部分成员</span></label><label class="opt"><input type="radio" name="q23_train" value="solo"><span>只有主理人自己</span></label><label class="opt"><input type="radio" name="q23_train" value="none"><span>没有</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">七、核心团队协同性</span><span class="cat-sub">2题</span></div>
+
+      <div class="q"><div class="q-label"><span class="q-num">24</span>是否实际参与"服务团队议事"（辅导长+知事长+六位知事共同参与，原则上每月一次）？</div>
+        <div class="opts" data-q="q24" data-kind="radio"><label class="opt"><input type="radio" name="q24" value="yes"><span>固定参与</span></label><label class="opt"><input type="radio" name="q24" value="sometimes"><span>有时受邀，不固定</span></label><label class="opt"><input type="radio" name="q24" value="no"><span>没有被纳入</span></label></div>
+      </div>
+
+      <div class="q"><div class="q-label"><span class="q-num">25</span>是否已有一套跨板块（辅导/传灯/慈善共用）的空间预约/协调机制？</div>
+        <div class="opts" data-q="q25" data-kind="radio"><label class="opt"><input type="radio" name="q25" value="yes"><span>有，已经在用</span></label><label class="opt"><input type="radio" name="q25" value="draft"><span>有雏形，还不完整</span></label><label class="opt"><input type="radio" name="q25" value="no"><span>没有</span></label></div>
+      </div>
+    </section>
+  </main>
+
+  <aside>
+    <div class="panel">
+      <h2>填写进度</h2>
+      <div class="progress-track"><div class="progress-fill" id="hostProgressFill"></div></div>
+      <div class="progress-label" id="hostProgressLabel">0 / 25 题</div>
+    </div>
+    <div class="panel">
+      <button class="primary" onclick="document.getElementById('hostPromptOut').scrollIntoView({behavior:'smooth', block:'center'})">生成诊断提示词 ↓</button>
+      <button class="ghost" onclick="resetView('host')">清空重填</button>
+    </div>
+    <div class="panel">
+      <button class="primary" id="submitBtnHost" onclick="submitHost()">提交到在线汇总 ↑</button>
+      <div id="submitStatusHost" style="margin-top:8px; font-size:12.5px; color:var(--ink-faint);"></div>
+    </div>
+  </aside>
+
+  <div class="prompt-box panel">
+    <h2 style="font-family:var(--font-display); font-size:16px; margin:0 0 4px;">复制给传帮带的人 / AI，获取详细诊断报告</h2>
+    <p class="copy-hint" style="margin:0 0 10px;">这段文字只做数据整理，交给分析人（母鸡/知事长/AI）对照分析框架，出完整的问题识别与建议。</p>
+    <textarea id="hostPromptOut" readonly></textarea>
+    <div class="copy-row"><button class="primary" style="width:auto;" onclick="copyPrompt('host')">复制</button><span class="toast" id="hostToast">已复制</span></div>
+  </div>
+  </div><!-- /hostView -->
+
+  <div id="volunteerView" style="display:none;">
+  <div class="panel" style="margin-bottom:18px; grid-column:1/-1;">
+    <div class="q" style="padding:0; border-top:none;">
+      <div class="q-label">学堂名称 <span style="color:var(--crit);">*必填</span></div>
+      <input type="text" placeholder="例如：望月学堂" data-q="orgName" data-kind="text" style="margin-bottom:10px;">
+      <div class="q-label">我在空间主理项目里的岗位类型</div>
+      <div class="opts" data-q="roleType" data-kind="radio" style="margin-bottom:10px;">
+        <label class="opt"><input type="radio" name="roleType" value="fixed"><span>固定岗位</span></label>
+        <label class="opt"><input type="radio" name="roleType" value="micro"><span>微岗位</span></label>
+      </div>
+      <div class="q-label">填表人姓名（选填）</div>
+      <input type="text" placeholder="" data-q="filledBy" data-kind="text">
+    </div>
+  </div>
+  <main id="volForm">
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">被传帮带体验</span><span class="cat-sub">5题</span></div>
+
+      <div class="q"><div class="q-label"><span class="q-num">1</span>我的带教者有没有主动跟我明确"我是你的带教者"，并说会持续支持我？</div>
+        <div class="opts" data-q="v1" data-kind="radio"><label class="opt"><input type="radio" name="v1" value="often"><span>经常这样</span></label><label class="opt"><input type="radio" name="v1" value="sometimes"><span>偶尔这样</span></label><label class="opt"><input type="radio" name="v1" value="rare"><span>几乎没有</span></label><label class="opt"><input type="radio" name="v1" value="na"><span>我不算被带教对象</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">2</span>我遇到问题时，第一时间会不会想到找TA？</div>
+        <div class="opts" data-q="v2" data-kind="radio"><label class="opt"><input type="radio" name="v2" value="often"><span>经常这样</span></label><label class="opt"><input type="radio" name="v2" value="sometimes"><span>偶尔这样</span></label><label class="opt"><input type="radio" name="v2" value="rare"><span>几乎没有</span></label><label class="opt"><input type="radio" name="v2" value="na"><span>我不算被带教对象</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">3</span>TA教我的时候，除了讲"怎么做"，会不会也讲"为什么这么做"？</div>
+        <div class="opts" data-q="v3" data-kind="radio"><label class="opt"><input type="radio" name="v3" value="often"><span>经常这样</span></label><label class="opt"><input type="radio" name="v3" value="sometimes"><span>偶尔这样</span></label><label class="opt"><input type="radio" name="v3" value="rare"><span>几乎没有</span></label><label class="opt"><input type="radio" name="v3" value="na"><span>我不算被带教对象</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">4</span>TA会不会关心我修学/生活上的情况，不只是关心我做事做得好不好？</div>
+        <div class="opts" data-q="v4" data-kind="radio"><label class="opt"><input type="radio" name="v4" value="often"><span>经常这样</span></label><label class="opt"><input type="radio" name="v4" value="sometimes"><span>偶尔这样</span></label><label class="opt"><input type="radio" name="v4" value="rare"><span>几乎没有</span></label><label class="opt"><input type="radio" name="v4" value="na"><span>我不算被带教对象</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">5</span>TA会不会定期（比如每月）跟我一起回顾我的成长情况？</div>
+        <div class="opts" data-q="v5" data-kind="radio"><label class="opt"><input type="radio" name="v5" value="often"><span>经常这样</span></label><label class="opt"><input type="radio" name="v5" value="sometimes"><span>偶尔这样</span></label><label class="opt"><input type="radio" name="v5" value="rare"><span>几乎没有</span></label><label class="opt"><input type="radio" name="v5" value="na"><span>我不算被带教对象</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">旁观印证</span><span class="cat-sub">10题</span></div>
+
+      <div class="q"><div class="q-label"><span class="q-num">6</span>班级参与空间维护的情况，你观察到的是？</div>
+        <div class="opts" data-q="v6" data-kind="radio"><label class="opt"><input type="radio" name="v6" value="many"><span>经常看到，好几个班都参与</span></label><label class="opt"><input type="radio" name="v6" value="few"><span>偶尔看到，只有个别班</span></label><label class="opt"><input type="radio" name="v6" value="none"><span>几乎没见过</span></label><label class="opt"><input type="radio" name="v6" value="unsure"><span>不清楚</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">7</span>这个空间给你的印象是？</div>
+        <div class="opts" data-q="v7" data-kind="radio"><label class="opt"><input type="radio" name="v7" value="good"><span>好找、整洁</span></label><label class="opt"><input type="radio" name="v7" value="mid"><span>一般</span></label><label class="opt"><input type="radio" name="v7" value="bad"><span>经常找不到/比较乱</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">8</span>参与日常维护时，你的感受是？</div>
+        <div class="opts" data-q="v8" data-kind="radio"><label class="opt"><input type="radio" name="v8" value="mindful"><span>带着用心/正念在做</span></label><label class="opt"><input type="radio" name="v8" value="normal"><span>普通，做完就好</span></label><label class="opt"><input type="radio" name="v8" value="careless"><span>比较随意、敷衍</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">9</span>学堂空间使用/排期信息，你的感受是？</div>
+        <div class="opts" data-q="v9" data-kind="radio"><label class="opt"><input type="radio" name="v9" value="clear"><span>经常能看到，很清楚</span></label><label class="opt"><input type="radio" name="v9" value="unstable"><span>偶尔能看到，不太稳定</span></label><label class="opt"><input type="radio" name="v9" value="none"><span>基本没见过</span></label><label class="opt"><input type="radio" name="v9" value="unsure"><span>不清楚</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">10</span>如果参与过活动筹备，物料准备情况是？</div>
+        <div class="opts" data-q="v10" data-kind="radio"><label class="opt"><input type="radio" name="v10" value="good"><span>很顺畅</span></label><label class="opt"><input type="radio" name="v10" value="mid"><span>基本够用</span></label><label class="opt"><input type="radio" name="v10" value="bad"><span>经常手忙脚乱</span></label><label class="opt"><input type="radio" name="v10" value="na"><span>没参与过</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">11</span>接待方式，你观察到的是？</div>
+        <div class="opts" data-q="v11" data-kind="radio"><label class="opt"><input type="radio" name="v11" value="fixed"><span>有固定专人负责</span></label><label class="opt"><input type="radio" name="v11" value="flex"><span>看情况灵活切换</span></label><label class="opt"><input type="radio" name="v11" value="whoever"><span>谁有空谁接</span></label><label class="opt"><input type="radio" name="v11" value="unsure"><span>不清楚</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">12</span>接待/来访记录发群这件事，你观察到的是？</div>
+        <div class="opts" data-q="v12" data-kind="radio"><label class="opt"><input type="radio" name="v12" value="often"><span>经常见到，当天就发</span></label><label class="opt"><input type="radio" name="v12" value="sometimes"><span>见过，但不是每次</span></label><label class="opt"><input type="radio" name="v12" value="none"><span>没见过这种习惯</span></label><label class="opt"><input type="radio" name="v12" value="unsure"><span>不清楚</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">13</span>接待给你的整体感受是？</div>
+        <div class="opts" data-q="v13" data-kind="radio"><label class="opt"><input type="radio" name="v13" value="good"><span>顺畅得体</span></label><label class="opt"><input type="radio" name="v13" value="mid"><span>还可以，细节有点粗糙</span></label><label class="opt"><input type="radio" name="v13" value="bad"><span>比较随意</span></label><label class="opt"><input type="radio" name="v13" value="unsure"><span>不清楚</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">14</span>学堂"缘起"介绍这件事，你的印象是？</div>
+        <div class="opts" data-q="v14" data-kind="radio"><label class="opt"><input type="radio" name="v14" value="clear"><span>看过/听过，能说出来</span></label><label class="opt"><input type="radio" name="v14" value="vague"><span>好像看过，说不清楚</span></label><label class="opt"><input type="radio" name="v14" value="none"><span>没看过也没听过</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">15</span>学堂里空间相关的事，你觉得是哪些人在张罗、维护？随便写。</div>
+        <textarea data-q="v15" data-kind="textarea" placeholder="随便写写你的观察"></textarea>
+      </div>
+    </section>
+  </main>
+
+  <aside>
+    <div class="panel">
+      <h2>填写进度</h2>
+      <div class="progress-track"><div class="progress-fill" id="volProgressFill"></div></div>
+      <div class="progress-label" id="volProgressLabel">0 / 15 题</div>
+    </div>
+    <div class="panel">
+      <button class="primary" onclick="document.getElementById('volPromptOut').scrollIntoView({behavior:'smooth', block:'center'})">生成提示词 ↓</button>
+      <button class="ghost" onclick="resetView('vol')">清空重填</button>
+    </div>
+    <div class="panel">
+      <button class="primary" id="submitBtnVol" onclick="submitVol()">提交到在线汇总 ↑</button>
+      <div id="submitStatusVol" style="margin-top:8px; font-size:12.5px; color:var(--ink-faint);"></div>
+    </div>
+  </aside>
+
+  <div class="prompt-box panel">
+    <h2 style="font-family:var(--font-display); font-size:16px; margin:0 0 4px;">复制发给传帮带的人 / AI，作为应证素材</h2>
+    <p class="copy-hint" style="margin:0 0 10px;">这是义工的旁观视角，跟空间主理人自填的完整版放在一起看，落差本身就是最有价值的信号。</p>
+    <textarea id="volPromptOut" readonly></textarea>
+    <div class="copy-row"><button class="primary" style="width:auto;" onclick="copyPrompt('vol')">复制</button><span class="toast" id="volToast">已复制</span></div>
+  </div>
+  </div><!-- /volunteerView -->
+
+  <div id="convenerView" style="display:none;">
+  <div class="panel" style="margin-bottom:18px; grid-column:1/-1;">
+    <div class="q" style="padding:0; border-top:none;">
+      <div class="q-label">学堂名称 <span style="color:var(--crit);">*必填</span></div>
+      <input type="text" placeholder="例如：望月学堂" data-q="orgName" data-kind="text" style="margin-bottom:10px;">
+      <div class="q-label">填表人姓名（选填）</div>
+      <input type="text" placeholder="" data-q="filledBy" data-kind="text">
+    </div>
+  </div>
+  <main id="conForm">
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">兼岗判断</span><span class="cat-sub">1题</span></div>
+      <div class="q"><div class="q-label"><span class="q-num">1</span>是否同时兼任空间主理人？</div>
+        <div class="opts" data-q="c1" data-kind="radio"><label class="opt"><input type="radio" name="c1" value="yes"><span>是，我兼岗</span></label><label class="opt"><input type="radio" name="c1" value="no"><span>否，是另外的人</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">服务团队议事机制</span><span class="cat-sub">3题</span></div>
+      <div class="q"><div class="q-label"><span class="q-num">2</span>服务团队议事是否按月稳定组织？</div>
+        <div class="opts" data-q="c2" data-kind="radio"><label class="opt"><input type="radio" name="c2" value="yes"><span>稳定按月</span></label><label class="opt"><input type="radio" name="c2" value="irregular"><span>不固定/常拖延</span></label><label class="opt"><input type="radio" name="c2" value="no"><span>基本没有</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">3</span>空间主理人是否稳定参与服务团队议事？</div>
+        <div class="opts" data-q="c3" data-kind="radio"><label class="opt"><input type="radio" name="c3" value="yes"><span>固定参与</span></label><label class="opt"><input type="radio" name="c3" value="sometimes"><span>有时受邀，不固定</span></label><label class="opt"><input type="radio" name="c3" value="no"><span>没有被纳入</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">4</span>议事的决议/进展，我有没有固定习惯确保空间主理人真正同步到？</div>
+        <div class="opts" data-q="c4" data-kind="radio"><label class="opt"><input type="radio" name="c4" value="yes"><span>有固定习惯</span></label><label class="opt"><input type="radio" name="c4" value="no"><span>没有，容易漏掉</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">对空间运营板块的关注度</span><span class="cat-sub">4题</span></div>
+      <div class="q"><div class="q-label"><span class="q-num">5</span>我是否有意识地对空间运营板块进行日常观察？</div>
+        <div class="opts" data-q="c5" data-kind="radio"><label class="opt"><input type="radio" name="c5" value="often"><span>经常主动观察</span></label><label class="opt"><input type="radio" name="c5" value="sometimes"><span>偶尔留意</span></label><label class="opt"><input type="radio" name="c5" value="no"><span>基本不关注</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">6</span>我平时是否会主动跟空间主理人探讨客户体验、空间运营这类具体问题？</div>
+        <div class="opts" data-q="c6" data-kind="radio"><label class="opt"><input type="radio" name="c6" value="often"><span>经常探讨</span></label><label class="opt"><input type="radio" name="c6" value="sometimes"><span>偶尔聊聊</span></label><label class="opt"><input type="radio" name="c6" value="no"><span>几乎没有</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">7</span>空间运营相关的内容，我是否已经把它纳入定期会议的固定议程？</div>
+        <div class="opts" data-q="c7" data-kind="radio"><label class="opt"><input type="radio" name="c7" value="yes"><span>已经是固定议程项</span></label><label class="opt"><input type="radio" name="c7" value="sometimes"><span>偶尔提及</span></label><label class="opt"><input type="radio" name="c7" value="no"><span>没有被纳入</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">8</span>客户体验数据的知晓与运用</div>
+        <div class="q-help" style="margin-bottom:6px;">(a) 空间运营那边是否有访客、书友等来访人员的基础数据记录？</div>
+        <div class="opts" data-q="c8a" data-kind="radio"><label class="opt"><input type="radio" name="c8a" value="yes"><span>有，持续记录</span></label><label class="opt"><input type="radio" name="c8a" value="partial"><span>有一些，不完整</span></label><label class="opt"><input type="radio" name="c8a" value="no"><span>没有</span></label></div>
+        <div class="q-help" style="margin:10px 0 6px;">(b) 我是否知道这些数据的存在？有没有见过分析或改进动作？</div>
+        <div class="opts" data-q="c8b" data-kind="radio"><label class="opt"><input type="radio" name="c8b" value="seen"><span>知道且见过分析/改进</span></label><label class="opt"><input type="radio" name="c8b" value="known"><span>知道存在，没见过分析</span></label><label class="opt"><input type="radio" name="c8b" value="no"><span>不知道有这些数据</span></label></div>
+        <div class="q-help" style="margin:10px 0 6px;">(c) 这件事是否已经进入服务团队议事的讨论？</div>
+        <div class="opts" data-q="c8c" data-kind="radio"><label class="opt"><input type="radio" name="c8c" value="yes"><span>已经是议事讨论的一部分</span></label><label class="opt"><input type="radio" name="c8c" value="sometimes"><span>提过，但不固定</span></label><label class="opt"><input type="radio" name="c8c" value="no"><span>没有进入过讨论</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">人才账本建设</span><span class="cat-sub">1题</span></div>
+      <div class="q"><div class="q-label"><span class="q-num">9</span>空间主理人团队的人才账本，我是否主动关心、推动建设？</div>
+        <div class="opts" data-q="c9" data-kind="radio"><label class="opt"><input type="radio" name="c9" value="yes"><span>主动关心，统一纳入</span></label><label class="opt"><input type="radio" name="c9" value="know"><span>知道大概情况，没主动推动</span></label><label class="opt"><input type="radio" name="c9" value="no"><span>不清楚，各管各的</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">区域协会对接</span><span class="cat-sub">2题</span></div>
+      <div class="q"><div class="q-label"><span class="q-num">10</span>过去半年主动联系区域协会寻求支持的次数、走的是正式渠道还是零散私下？</div>
+        <div class="opts" data-q="c10a" data-kind="radio"><label class="opt"><input type="radio" name="c10a" value="0"><span>0次</span></label><label class="opt"><input type="radio" name="c10a" value="1-2"><span>1-2次</span></label><label class="opt"><input type="radio" name="c10a" value="3+"><span>3次以上</span></label></div>
+        <div class="opts" style="margin-top:8px;" data-q="c10b" data-kind="radio"><label class="opt"><input type="radio" name="c10b" value="formal"><span>正式渠道</span></label><label class="opt"><input type="radio" name="c10b" value="scattered"><span>零散私下</span></label></div>
+      </div>
+      <div class="q"><div class="q-label"><span class="q-num">11</span>空间主理人有没有反馈过主动联系"区域空间主理项目"寻求支持？</div>
+        <div class="opts" data-q="c11" data-kind="radio"><label class="opt"><input type="radio" name="c11" value="yes"><span>反馈过</span></label><label class="opt"><input type="radio" name="c11" value="no"><span>没反馈过</span></label><label class="opt"><input type="radio" name="c11" value="unsure"><span>不清楚</span></label></div>
+      </div>
+    </section>
+
+    <section class="cat"><div class="cat-head"><span class="cat-title">静使支持</span><span class="cat-sub">1题</span></div>
+      <div class="q"><div class="q-label"><span class="q-num">12</span>目前是否仍有静使支持，基本对接机制是否到位？</div>
+        <div class="opts" data-q="c12" data-kind="radio"><label class="opt"><input type="radio" name="c12" value="yes"><span>有定向对接机制</span></label><label class="opt"><input type="radio" name="c12" value="scattered"><span>有支持，但比较零散</span></label><label class="opt"><input type="radio" name="c12" value="none"><span>目前没有静使参与</span></label></div>
+      </div>
+    </section>
+  </main>
+
+  <aside>
+    <div class="panel">
+      <h2>填写进度</h2>
+      <div class="progress-track"><div class="progress-fill" id="conProgressFill"></div></div>
+      <div class="progress-label" id="conProgressLabel">0 / 12 题</div>
+    </div>
+    <div class="panel">
+      <button class="primary" onclick="document.getElementById('conPromptOut').scrollIntoView({behavior:'smooth', block:'center'})">生成提示词 ↓</button>
+      <button class="ghost" onclick="resetView('con')">清空重填</button>
+    </div>
+    <div class="panel">
+      <button class="primary" id="submitBtnCon" onclick="submitCon()">提交到在线汇总 ↑</button>
+      <div id="submitStatusCon" style="margin-top:8px; font-size:12.5px; color:var(--ink-faint);"></div>
+    </div>
+  </aside>
+
+  <div class="prompt-box panel">
+    <h2 style="font-family:var(--font-display); font-size:16px; margin:0 0 4px;">复制给传帮带的人 / AI</h2>
+    <p class="copy-hint" style="margin:0 0 10px;">知事长视角的团队统筹自检，跟空间主理人版对照看，落差本身是重要信号。</p>
+    <textarea id="conPromptOut" readonly></textarea>
+    <div class="copy-row"><button class="primary" style="width:auto;" onclick="copyPrompt('con')">复制</button><span class="toast" id="conToast">已复制</span></div>
+  </div>
+  </div><!-- /convenerView -->
+
+  <footer class="note">demo版本 · 数据仅保存在你此刻使用的浏览器本地，不会上传到任何服务器</footer>
+
+</div>
+
+<script>
+(function(){
+  // 部署Google Apps Script后端后，把拿到的网址填在这里（末尾是 /exec）
+  var SUBMIT_URL = 'https://script.google.com/macros/s/AKfycbwYHi-0bHGpmkDyD5Ij6I6j7q4KkmBidVF5iH-x9h0nkv3h54NmqVjYpbHdR7lzOHA/exec';
+
+  function isSubmitConfigured(){ return SUBMIT_URL && SUBMIT_URL.indexOf('PASTE_') !== 0; }
+
+  function submitPayload(role, orgFields, headers, row, btnId, statusId){
+    var btn = document.getElementById(btnId);
+    var statusEl = document.getElementById(statusId);
+    if(!orgFields.orgName){
+      statusEl.style.color = 'var(--crit)';
+      statusEl.textContent = '请先填写"学堂名称"再提交。';
+      return;
+    }
+    if(!isSubmitConfigured()){
+      statusEl.style.color = 'var(--crit)';
+      statusEl.textContent = '在线收集地址还没配置好，暂时无法提交——请先用"生成提示词"复制发送。';
+      return;
+    }
+    btn.disabled = true;
+    var originalText = btn.textContent;
+    btn.textContent = '提交中…';
+    statusEl.style.color = 'var(--ink-faint)';
+    statusEl.textContent = '';
+    fetch(SUBMIT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ role: role, headers: headers, row: row })
+    }).then(function(res){ return res.json(); }).then(function(data){
+      btn.disabled = false;
+      btn.textContent = originalText;
+      if(data && data.status === 'ok'){
+        statusEl.style.color = 'var(--good)';
+        statusEl.textContent = '✓ 已提交，' + (orgFields.orgName || '') + ' 的数据已收到。';
+      } else {
+        statusEl.style.color = 'var(--crit)';
+        statusEl.textContent = '提交失败：' + (data && data.message ? data.message : '未知错误') + '，可以改用"生成提示词"复制发送。';
+      }
+    }).catch(function(err){
+      btn.disabled = false;
+      btn.textContent = originalText;
+      statusEl.style.color = 'var(--crit)';
+      statusEl.textContent = '提交失败（网络或地址配置问题），可以改用"生成提示词"复制发送。';
+    });
+  }
+
+  var HOST_TOTAL = 25, VOL_TOTAL = 15, CON_TOTAL = 12;
+  var hostState = {}, volState = {}, conState = {};
+  var HOST_KEY='xt-zicha-host', VOL_KEY='xt-zicha-vol', CON_KEY='xt-zicha-con';
+
+  function load(key, fallback){ try{ var raw=localStorage.getItem(key); return raw?JSON.parse(raw):fallback; }catch(e){ return fallback; } }
+  function persist(key, state){ try{ localStorage.setItem(key, JSON.stringify(state)); }catch(e){} }
+
+  function wireForm(rootId, state, persistKey, onChange){
+    var root = document.getElementById(rootId);
+    if(!root) return;
+    root.querySelectorAll('.opts[data-kind="radio"]').forEach(function(group){
+      var key = group.getAttribute('data-q');
+      group.querySelectorAll('input[type="radio"]').forEach(function(input){
+        input.addEventListener('change', function(){ state[key]=input.value; persist(persistKey,state); onChange(); });
+      });
+    });
+    root.querySelectorAll('.opts[data-kind="checkbox"]').forEach(function(group){
+      var key = group.getAttribute('data-q');
+      group.querySelectorAll('input[type="checkbox"]').forEach(function(input){
+        input.addEventListener('change', function(){
+          var arr = state[key] || [];
+          if(input.checked){ if(arr.indexOf(input.value)===-1) arr.push(input.value); }
+          else{ arr = arr.filter(function(v){ return v!==input.value; }); }
+          state[key]=arr; persist(persistKey,state); onChange();
+        });
+      });
+    });
+    root.querySelectorAll('input[data-kind="text"]').forEach(function(input){
+      var key = input.getAttribute('data-q');
+      input.addEventListener('input', function(){ state[key]=input.value; persist(persistKey,state); onChange(); });
+    });
+    root.querySelectorAll('textarea[data-kind="textarea"]').forEach(function(ta){
+      var key = ta.getAttribute('data-q');
+      ta.addEventListener('input', function(){ state[key]=ta.value; persist(persistKey,state); onChange(); });
+    });
+    root.querySelectorAll('label.opt').forEach(function(label){
+      label.addEventListener('click', function(){
+        var group = label.closest('.opts');
+        setTimeout(function(){
+          group.querySelectorAll('label.opt').forEach(function(l){
+            l.classList.toggle('checked', l.querySelector('input').checked);
+          });
+        }, 0);
+      });
+    });
+  }
+
+  function applyState(rootId, state){
+    var root = document.getElementById(rootId);
+    if(!root) return;
+    root.querySelectorAll('.opts[data-kind="radio"]').forEach(function(group){
+      var key = group.getAttribute('data-q'), v = state[key];
+      group.querySelectorAll('input[type="radio"]').forEach(function(input){
+        input.checked = (input.value===v);
+        input.closest('.opt').classList.toggle('checked', input.value===v);
+      });
+    });
+    root.querySelectorAll('.opts[data-kind="checkbox"]').forEach(function(group){
+      var key = group.getAttribute('data-q'), arr = state[key]||[];
+      group.querySelectorAll('input[type="checkbox"]').forEach(function(input){
+        input.checked = arr.indexOf(input.value)>-1;
+        input.closest('.opt').classList.toggle('checked', input.checked);
+      });
+    });
+    root.querySelectorAll('input[data-kind="text"]').forEach(function(input){
+      var key = input.getAttribute('data-q');
+      if(state[key]!=null) input.value = state[key];
+    });
+    root.querySelectorAll('textarea[data-kind="textarea"]').forEach(function(ta){
+      var key = ta.getAttribute('data-q');
+      if(state[key]!=null) ta.value = state[key];
+    });
+  }
+
+  // ---- host ----
+  var HOST_KEYS = ['q1a','q1b','q2_count','q3_meeting','q3_study','q3_agenda','q4','q5',
+    'q6_cat','q6_list','q7_restore','q7_rotation','q7_group','q8','q9','q10','q11','q12',
+    'q13_freq','q14_know','q14_prep','q14_restore','q15','q16_out','q16_in','q17_forum','q17_plan','q17_seek','q18',
+    'q19_switch','q20_record','q20_focus','q21_sop','q21_train','q22','q23_clear','q23_train','q24','q25'];
+  // grouped counting so multi-part items count once when all parts filled
+  var HOST_GROUPS = [
+    ['q1a','q1b'], ['q2_count'], ['q3_meeting','q3_study','q3_agenda'], ['q4'], ['q5'],
+    ['q6_cat','q6_list'], ['q7_restore','q7_rotation','q7_group'], ['q8'], ['q9'], ['q10'], ['q11'], ['q12'],
+    ['q13_freq'], ['q14_know','q14_prep','q14_restore'], ['q15'],
+    ['q16_out','q16_in'], ['q17_forum','q17_plan','q17_seek'], ['q18'],
+    ['q19_switch'], ['q20_record','q20_focus'], ['q21_sop','q21_train'],
+    ['q22'], ['q23_clear','q23_train'], ['q24'], ['q25']
+  ];
+  function filled(v){ if(Array.isArray(v)) return v.length>0; return v!=null && v!==''; }
+  function hostCount(){
+    var n=0;
+    HOST_GROUPS.forEach(function(g){ if(g.every(function(k){ return filled(hostState[k]); })) n++; });
+    if(hostState.q2_forms && hostState.q2_forms.length){} // multi-select doesn't block count
+    return n;
+  }
+  function renderHost(){
+    applyState('hostForm', hostState);
+    document.querySelectorAll('#hostView input[data-kind="text"]').forEach(function(input){
+      var key=input.getAttribute('data-q'); if(hostState[key]!=null) input.value=hostState[key];
+    });
+    var q2OtherText = document.getElementById('q2OtherText');
+    if(q2OtherText){ q2OtherText.style.display = (hostState.q2_forms||[]).indexOf('other')>-1 ? '' : 'none'; }
+    var n = hostCount();
+    document.getElementById('hostProgressFill').style.width = (n/HOST_TOTAL*100)+'%';
+    document.getElementById('hostProgressLabel').textContent = n+' / '+HOST_TOTAL+' 题';
+    updateHostPrompt();
+  }
+  function yn(v){ return v==='yes'?'是':v==='no'?'否':(v==null?'（未填）':v); }
+  function updateHostPrompt(){
+    var s = hostState;
+    var lines = [];
+    lines.push('【学堂空间主理人自检 填答数据】');
+    lines.push('学堂：'+(s.orgName||'（未填）')+'　班级数：'+(s.classCount||'（未填）')+'　填表人：'+(s.filledBy||'（未填）'));
+    lines.push('');
+    lines.push('1. 补位意识：知道缺位='+yn(s.q1a)+'；主动补位='+yn(s.q1b));
+    lines.push('2. 班级护持：'+(s.q2_count||'（未填）')+'个班；形式='+((s.q2_forms||[]).join('、')||'（未填）')+(s.q2_other?'（其他：'+s.q2_other+'）':''));
+    lines.push('3. 例会：'+yn(s.q3_meeting)+'；含学习='+yn(s.q3_study)+'；含补位议程='+yn(s.q3_agenda));
+    lines.push('4. 信息同步感受：'+(s.q4||'（未填）'));
+    lines.push('5. 人才账本：'+(s.q5||'（未填）'));
+    lines.push('6. 仓库分类='+yn(s.q6_cat)+'；清单='+yn(s.q6_list));
+    lines.push('7. 日常维护：恢复原状='+yn(s.q7_restore)+'；轮值机制='+yn(s.q7_rotation)+'；发群='+yn(s.q7_group));
+    lines.push('8. 装置本地化优化：'+yn(s.q8));
+    lines.push('9. 装置模式文件：'+(s.q9||'（未填）'));
+    lines.push('10. 定期维护人数：'+(s.q10||'（未填）'));
+    lines.push('11. 空间使用集中度：'+(s.q11||'（未填）'));
+    lines.push('12. 正念义工行意识：'+(s.q12||'（未填）'));
+    lines.push('13. 空间使用信息公开：'+((s.q13_ways||[]).join('、')||'（未填）')+'；更新频率='+(s.q13_freq||'（未填）'));
+    lines.push('14. 活动对接：主动了解='+yn(s.q14_know)+'；提前准备='+yn(s.q14_prep)+'；善巧恢复='+yn(s.q14_restore));
+    lines.push('15. 活动反馈优化：'+(s.q15||'（未填）'));
+    lines.push('16. 经验输出：对外='+((s.q16_out||[]).join('、')||'（未填）')+'；对内='+((s.q16_in||[]).join('、')||'（未填）'));
+    lines.push('17. 个人成长：参加论坛='+yn(s.q17_forum)+'；规划='+(s.q17_plan||'（未填）')+'；主动找传帮带='+yn(s.q17_seek));
+    lines.push('18. 对接渠道正式度：'+(s.q18||'（未填）'));
+    lines.push('19. 接待模式：'+((s.q19_modes||[]).join('、')||'（未填）')+'；能否切换='+yn(s.q19_switch));
+    lines.push('20. 记录与复访：流程='+yn(s.q20_record)+'；关注范围='+(s.q20_focus||'（未填）'));
+    lines.push('21. 接待标准化：SOP='+(s.q21_sop||'（未填）')+'；培训='+yn(s.q21_train));
+    lines.push('22. 缘起话术呈现：'+yn(s.q22));
+    lines.push('23. 品牌内涵：清楚='+yn(s.q23_clear)+'；培训覆盖='+(s.q23_train||'（未填）'));
+    lines.push('24. 服务团队议事参与：'+(s.q24||'（未填）'));
+    lines.push('25. 跨板块空间预约协调机制：'+(s.q25||'（未填）'));
+    lines.push('');
+    lines.push('---');
+    lines.push('请对照分析框架（十全大补锚点），输出：一、概要　二、核心判断　三、现象与分析　四、数据支持。');
+    document.getElementById('hostPromptOut').value = lines.join('\n');
+  }
+
+  // ---- volunteer ----
+  var VOL_KEYS = ['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12','v13','v14','v15'];
+  function volCount(){ var n=0; VOL_KEYS.forEach(function(k){ if(volState[k]!=null && volState[k]!=='') n++; }); return n; }
+  function renderVol(){
+    applyState('volForm', volState);
+    document.querySelectorAll('#volunteerView input[data-kind="text"]').forEach(function(input){
+      var key=input.getAttribute('data-q'); if(volState[key]!=null) input.value=volState[key];
+    });
+    document.querySelectorAll('#volunteerView .opts[data-q="roleType"] input[type="radio"]').forEach(function(input){
+      input.checked = (input.value===volState.roleType);
+      input.closest('.opt').classList.toggle('checked', input.checked);
+    });
+    var n = volCount();
+    document.getElementById('volProgressFill').style.width = (n/VOL_TOTAL*100)+'%';
+    document.getElementById('volProgressLabel').textContent = n+' / '+VOL_TOTAL+' 题';
+    updateVolPrompt();
+  }
+  function updateVolPrompt(){
+    var s = volState;
+    var lines = [];
+    lines.push('【项目义工应证素材】');
+    lines.push('学堂：'+(s.orgName||'（未填）')+'　岗位类型：'+(s.roleType==='fixed'?'固定岗位':s.roleType==='micro'?'微岗位':'（未填）')+'　填表人：'+(s.filledBy||'（未填）'));
+    lines.push('');
+    lines.push('— 被传帮带体验 —');
+    for(var i=1;i<=5;i++){ lines.push(i+'. '+(s['v'+i]||'（未填）')); }
+    lines.push('');
+    lines.push('— 旁观印证 —');
+    for(var j=6;j<=14;j++){ lines.push(j+'. '+(s['v'+j]||'（未填）')); }
+    lines.push('15. 开放观察：'+(s.v15||'（未填）'));
+    lines.push('');
+    lines.push('---');
+    lines.push('这是义工旁观视角，请跟空间主理人自填的完整版对照看，落差本身是最有价值的信号。');
+    document.getElementById('volPromptOut').value = lines.join('\n');
+  }
+
+  // ---- convener ----
+  var CON_GROUPS = [['c1'],['c2'],['c3'],['c4'],['c5'],['c6'],['c7'],['c8a','c8b','c8c'],['c9'],['c10a','c10b'],['c11'],['c12']];
+  function conCount(){ var n=0; CON_GROUPS.forEach(function(g){ if(g.every(function(k){ return conState[k]!=null && conState[k]!==''; })) n++; }); return n; }
+  function renderCon(){
+    applyState('conForm', conState);
+    document.querySelectorAll('#convenerView input[data-kind="text"]').forEach(function(input){
+      var key=input.getAttribute('data-q'); if(conState[key]!=null) input.value=conState[key];
+    });
+    var n = conCount();
+    document.getElementById('conProgressFill').style.width = (n/CON_TOTAL*100)+'%';
+    document.getElementById('conProgressLabel').textContent = n+' / '+CON_TOTAL+' 题';
+    updateConPrompt();
+  }
+  function updateConPrompt(){
+    var s = conState;
+    var lines = [];
+    lines.push('【知事长统筹自检】');
+    lines.push('学堂：'+(s.orgName||'（未填）')+'　填表人：'+(s.filledBy||'（未填）'));
+    lines.push('');
+    lines.push('1. 是否兼任空间主理人：'+(s.c1||'（未填）'));
+    lines.push('2. 服务团队议事按月组织：'+(s.c2||'（未填）'));
+    lines.push('3. 空间主理人参与议事：'+(s.c3||'（未填）'));
+    lines.push('4. 决议同步习惯：'+(s.c4||'（未填）'));
+    lines.push('5. 意识与观察：'+(s.c5||'（未填）'));
+    lines.push('6. 交流与探讨：'+(s.c6||'（未填）'));
+    lines.push('7. 会议与机制：'+(s.c7||'（未填）'));
+    lines.push('8. 客户体验数据：记录='+(s.c8a||'（未填）')+'；知晓分析='+(s.c8b||'（未填）')+'；议事讨论='+(s.c8c||'（未填）'));
+    lines.push('9. 人才账本建设：'+(s.c9||'（未填）'));
+    lines.push('10. 区域协会对接：次数='+(s.c10a||'（未填）')+'；渠道='+(s.c10b||'（未填）'));
+    lines.push('11. 空间主理人是否反馈过对接区域：'+(s.c11||'（未填）'));
+    lines.push('12. 静使支持：'+(s.c12||'（未填）'));
+    lines.push('');
+    lines.push('---');
+    lines.push('这是知事长的团队统筹视角，请跟空间主理人自填的完整版对照看。');
+    document.getElementById('conPromptOut').value = lines.join('\n');
+  }
+
+  window.copyPrompt = function(mode){
+    var id = mode==='host'?'hostPromptOut':mode==='vol'?'volPromptOut':'conPromptOut';
+    var toastId = mode==='host'?'hostToast':mode==='vol'?'volToast':'conToast';
+    var ta = document.getElementById(id);
+    ta.select(); ta.setSelectionRange(0,999999);
+    try{
+      navigator.clipboard.writeText(ta.value).then(function(){ showToast(toastId); }, function(){ document.execCommand('copy'); showToast(toastId); });
+    }catch(e){ document.execCommand('copy'); showToast(toastId); }
+  };
+  function showToast(id){ var t=document.getElementById(id); t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },1600); }
+
+  window.resetView = function(mode){
+    if(mode==='host'){ hostState={}; persist(HOST_KEY,hostState); document.querySelectorAll('#hostView input').forEach(function(i){ if(i.type==='radio'||i.type==='checkbox') i.checked=false; else i.value=''; }); renderHost(); }
+    if(mode==='vol'){ volState={}; persist(VOL_KEY,volState); document.querySelectorAll('#volunteerView input, #volunteerView textarea').forEach(function(i){ if(i.type==='radio') i.checked=false; else i.value=''; }); renderVol(); }
+    if(mode==='con'){ conState={}; persist(CON_KEY,conState); document.querySelectorAll('#convenerView input').forEach(function(i){ if(i.type==='radio') i.checked=false; else i.value=''; }); renderCon(); }
+  };
+
+  // ---------------- submit to online sheet ----------------
+  window.submitHost = function(){
+    var headers = ['提交时间', '学堂名称', '现有班级数', '填表人', '完整数据JSON'];
+    var row = [new Date().toISOString(), hostState.orgName || '', hostState.classCount || '', hostState.filledBy || '', JSON.stringify(hostState)];
+    submitPayload('host', {orgName: hostState.orgName}, headers, row, 'submitBtnHost', 'submitStatusHost');
+  };
+  window.submitVol = function(){
+    var roleLabel = volState.roleType==='fixed' ? '固定岗位' : volState.roleType==='micro' ? '微岗位' : '';
+    var headers = ['提交时间', '学堂名称', '岗位类型', '填表人', '完整数据JSON'];
+    var row = [new Date().toISOString(), volState.orgName || '', roleLabel, volState.filledBy || '', JSON.stringify(volState)];
+    submitPayload('volunteer', {orgName: volState.orgName}, headers, row, 'submitBtnVol', 'submitStatusVol');
+  };
+  window.submitCon = function(){
+    var headers = ['提交时间', '学堂名称', '填表人', '完整数据JSON'];
+    var row = [new Date().toISOString(), conState.orgName || '', conState.filledBy || '', JSON.stringify(conState)];
+    submitPayload('convener', {orgName: conState.orgName}, headers, row, 'submitBtnCon', 'submitStatusCon');
+  };
+
+  hostState = load(HOST_KEY, {});
+  volState = load(VOL_KEY, {});
+  conState = load(CON_KEY, {});
+
+  wireForm('hostForm', hostState, HOST_KEY, renderHost);
+  var q2OtherCheck = document.getElementById('q2OtherCheck');
+  if(q2OtherCheck){
+    q2OtherCheck.addEventListener('change', function(){
+      document.getElementById('q2OtherText').style.display = q2OtherCheck.checked ? '' : 'none';
+    });
+  }
+  document.querySelectorAll('#hostView input[data-kind="text"]').forEach(function(input){
+    var key=input.getAttribute('data-q');
+    input.addEventListener('input', function(){ hostState[key]=input.value; persist(HOST_KEY,hostState); renderHost(); });
+  });
+  wireForm('volForm', volState, VOL_KEY, renderVol);
+  document.querySelectorAll('#volunteerView .opts[data-q="roleType"] input[type="radio"]').forEach(function(input){
+    input.addEventListener('change', function(){ volState.roleType=input.value; persist(VOL_KEY,volState); renderVol(); });
+  });
+  document.querySelectorAll('#volunteerView input[data-kind="text"]').forEach(function(input){
+    var key=input.getAttribute('data-q');
+    input.addEventListener('input', function(){ volState[key]=input.value; persist(VOL_KEY,volState); renderVol(); });
+  });
+  wireForm('conForm', conState, CON_KEY, renderCon);
+  document.querySelectorAll('#convenerView input[data-kind="text"]').forEach(function(input){
+    var key=input.getAttribute('data-q');
+    input.addEventListener('input', function(){ conState[key]=input.value; persist(CON_KEY,conState); renderCon(); });
+  });
+
+  renderHost(); renderVol(); renderCon();
+
+  document.querySelectorAll('input[name="fillMode"]').forEach(function(input){
+    input.addEventListener('change', function(){
+      var mode = input.value;
+      document.getElementById('hostView').style.display = mode==='host'?'':'none';
+      document.getElementById('volunteerView').style.display = mode==='volunteer'?'':'none';
+      document.getElementById('convenerView').style.display = mode==='convener'?'':'none';
+      document.getElementById('modeHostLabel').classList.toggle('checked', mode==='host');
+      document.getElementById('modeVolLabel').classList.toggle('checked', mode==='volunteer');
+      document.getElementById('modeConLabel').classList.toggle('checked', mode==='convener');
+    });
+  });
+})();
+</script>
+</body>
+</html>
