@@ -675,6 +675,11 @@
   }
   function renderHost(){
     applyState('hostForm', hostState);
+    // 恢复 classCount（在 hostForm 外部）
+    document.querySelectorAll('#hostView .opts[data-q="classCount"] input[type="radio"]').forEach(function(input){
+      input.checked = (input.value === hostState.classCount);
+      input.closest('.opt').classList.toggle('checked', input.checked);
+    });
     document.querySelectorAll('#hostView input[data-kind="text"]').forEach(function(input){
       var key=input.getAttribute('data-q'); if(hostState[key]!=null) input.value=hostState[key];
     });
@@ -835,6 +840,14 @@
   conState = load(CON_KEY, {});
 
   wireForm('hostForm', hostState, HOST_KEY, renderHost);
+  // 为 classCount 单独绑定 change 事件（它在 hostForm 外部）
+  document.querySelectorAll('#hostView .opts[data-q="classCount"] input[type="radio"]').forEach(function(input){
+    input.addEventListener('change', function(){
+      hostState.classCount = input.value;
+      persist(HOST_KEY, hostState);
+      renderHost();
+    });
+  });
   var q2OtherCheck = document.getElementById('q2OtherCheck');
   if(q2OtherCheck){
     q2OtherCheck.addEventListener('change', function(){
