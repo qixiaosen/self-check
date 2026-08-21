@@ -539,44 +539,54 @@
   function isSubmitConfigured(){ return SUBMIT_URL && SUBMIT_URL.indexOf('PASTE_') !== 0; }
 
   function submitPayload(role, orgFields, headers, row, btnId, statusId){
-    var btn = document.getElementById(btnId);
-    var statusEl = document.getElementById(statusId);
-    if(!orgFields.orgName){
-      statusEl.style.color = 'var(--crit)';
-      statusEl.textContent = '请先填写"学堂名称"再提交。';
-      return;
-    }
-    if(!isSubmitConfigured()){
-      statusEl.style.color = 'var(--crit)';
-      statusEl.textContent = '在线收集地址还没配置好，暂时无法提交——请先用"生成提示词"复制发送。';
-      return;
-    }
-    btn.disabled = true;
-    var originalText = btn.textContent;
-    btn.textContent = '提交中…';
-    statusEl.style.color = 'var(--ink-faint)';
-    statusEl.textContent = '';
-    fetch(SUBMIT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ role: role, headers: headers, row: row })
-    }).then(function(res){ return res.json(); }).then(function(data){
-      btn.disabled = false;
-      btn.textContent = originalText;
-      if(data && data.status === 'ok'){
-        statusEl.style.color = 'var(--good)';
-        statusEl.textContent = '✓ 已提交，' + (orgFields.orgName || '') + ' 的数据已收到。';
-      } else {
-        statusEl.style.color = 'var(--crit)';
-        statusEl.textContent = '提交失败：' + (data && data.message ? data.message : '未知错误') + '，可以改用"生成提示词"复制发送。';
-      }
-    }).catch(function(err){
-      btn.disabled = false;
-      btn.textContent = originalText;
-      statusEl.style.color = 'var(--crit)';
-      statusEl.textContent = '提交失败（网络或地址配置问题），可以改用"生成提示词"复制发送。';
-    });
+  // ---- 防御：如果 role 无效，给个默认值 ----
+  if (typeof role !== 'string' || role === '') {
+    role = 'unknown';
+    console.warn('submitPayload: role 参数无效，已设为 "unknown"');
   }
+
+  var btn = document.getElementById(btnId);
+  var statusEl = document.getElementById(statusId);
+  if(!orgFields.orgName){
+    statusEl.style.color = 'var(--crit)';
+    statusEl.textContent = '请先填写"学堂名称"再提交。';
+    return;
+  }
+  if(!isSubmitConfigured()){
+    statusEl.style.color = 'var(--crit)';
+    statusEl.textContent = '在线收集地址还没配置好，暂时无法提交——请先用"生成提示词"复制发送。';
+    return;
+  }
+  btn.disabled = true;
+  var originalText = btn.textContent;
+  btn.textContent = '提交中…';
+  statusEl.style.color = 'var(--ink-faint)';
+  statusEl.textContent = '';
+
+  fetch(SUBMIT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ role: role, headers: headers, row: row })
+  })
+  .then(function(res){ return res.json(); })
+  .then(function(data){
+    btn.disabled = false;
+    btn.textContent = originalText;
+    if(data && data.status === 'ok'){
+      statusEl.style.color = 'var(--good)';
+      statusEl.textContent = '✓ 已提交，' + (orgFields.orgName || '') + ' 的数据已收到。';
+    } else {
+      statusEl.style.color = 'var(--crit)';
+      statusEl.textContent = '提交失败：' + (data && data.message ? data.message : '未知错误') + '，可以改用"生成提示词"复制发送。';
+    }
+  })
+  .catch(function(err){
+    btn.disabled = false;
+    btn.textContent = originalText;
+    statusEl.style.color = 'var(--crit)';
+    statusEl.textContent = '提交失败（网络或地址配置问题），可以改用"生成提示词"复制发送。';
+  });
+}
 
   var HOST_TOTAL = 25, VOL_TOTAL = 15, CON_TOTAL = 12;
   var hostState = {}, volState = {}, conState = {};
